@@ -76,6 +76,15 @@ export function usePackets() {
     });
   }, []);
 
+  const clearDemoPackets = useCallback(() => {
+    setDemoPackets([]);
+    // Keep only user packet activations
+    setActivePacketIds((prev) => {
+      const userIds = new Set(userPackets.map((p) => p.id));
+      return new Set([...prev].filter((id) => userIds.has(id)));
+    });
+  }, [userPackets]);
+
   const activePackets = visiblePackets.filter((p) => activePacketIds.has(p.id));
 
   const userPacketIds = new Set(userPackets.map((p) => p.id));
@@ -90,5 +99,6 @@ export function usePackets() {
     deletePacket,
     togglePacket,
     loadDemoPackets,
+    clearDemoPackets,
   };
 }

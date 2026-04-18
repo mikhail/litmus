@@ -44,6 +44,7 @@ function App() {
     deletePacket,
     togglePacket,
     loadDemoPackets,
+    clearDemoPackets,
   } = usePackets();
 
   const handleDemoSelect = useCallback(
@@ -54,6 +55,12 @@ function App() {
     },
     [loadDemoPackets]
   );
+
+  const handleDemoClear = useCallback(() => {
+    setCurrentDemoId(null);
+    setDocumentHtml('');
+    clearDemoPackets();
+  }, [clearDemoPackets]);
 
   const handleRewrite = useCallback((html: string) => {
     setDocumentHtml(html);
@@ -132,7 +139,7 @@ function App() {
             </span>
           </div>
           <div id="tour-demo-switcher" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <DemoSwitcher onSelect={handleDemoSelect} currentId={currentDemoId} />
+            <DemoSwitcher onSelect={handleDemoSelect} onClear={handleDemoClear} currentId={currentDemoId} />
             {import.meta.env.DEV && (
               <Button
                 type="text"
@@ -209,7 +216,7 @@ function App() {
           <p style={{ color: '#888', fontSize: 14, marginBottom: 20 }}>A composable text compliance engine</p>
         </div>
         <Paragraph style={{ fontSize: 15, lineHeight: 1.7 }}>
-          Litmus is a <strong>linter for prose</strong>. Your company, your organization, your team and your adjacent teams and you personally can define test packets — bundles of "writing criteria". Then run them against any text. This is <strong>TDD (test driven development) for creative writing</strong>.
+          Litmus is a <strong>linter for prose</strong>. Your company, your organization, your team and your adjacent teams and you personally can define test packets — bundles of "writing criteria". Then run them against any text. This is like <strong>unit testing</strong> but for creative writing.
         </Paragraph>
         <Paragraph style={{ fontSize: 15, lineHeight: 1.7 }}>
           Claude then evaluates each criterion and shows pass/fail and suggests fixes.

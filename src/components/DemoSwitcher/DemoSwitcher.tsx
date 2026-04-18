@@ -4,10 +4,11 @@ import { demoContexts } from '../../data/demoContexts';
 
 interface Props {
   onSelect: (context: DemoContext) => void;
+  onClear: () => void;
   currentId: string | null;
 }
 
-export default function DemoSwitcher({ onSelect, currentId }: Props) {
+export default function DemoSwitcher({ onSelect, onClear, currentId }: Props) {
   return (
     <Space size="small" align="center">
       <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>Demo:</span>
@@ -17,6 +18,7 @@ export default function DemoSwitcher({ onSelect, currentId }: Props) {
           const ctx = demoContexts.find((c) => c.id === id);
           if (ctx) onSelect(ctx);
         }}
+        onClear={onClear}
         placeholder="Choose a context…"
         style={{ width: 200 }}
         allowClear

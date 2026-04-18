@@ -28,6 +28,10 @@ export default function TestRunner({ activePackets, documentHtml, onRewrite }: P
   const [runningCriterionId, setRunningCriterionId] = useState<string | null>(null);
   const [fixingCriterionId, setFixingCriterionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lastTestedHtml, setLastTestedHtml] = useState<string>('');
+
+  // Invalidate results when text or active packets change
+  const resultsAreStale = results.length > 0 && documentHtml !== lastTestedHtml;
 
   const allCriteria = activePackets.flatMap((p) => p.criteria);
   const allResults = results.flatMap((r) => r.results);
@@ -75,6 +79,7 @@ export default function TestRunner({ activePackets, documentHtml, onRewrite }: P
     );
 
     setResults(runResults);
+    setLastTestedHtml(documentHtml);
 
     if (runErrors.length > 0) {
       const errorMsg = runErrors
@@ -213,9 +218,14 @@ export default function TestRunner({ activePackets, documentHtml, onRewrite }: P
           <div className="test-summary">
             <Progress
               percent={Math.round((passCount / totalCount) * 100)}
-              status={hasFailures ? 'exception' : 'success'}
-              format={() => `${passCount}/${totalCount} passing`}
+              status={resultsAreStale ? 'normal' : hasFailures ? 'exception' : 'success'}
+              format={() => `${passCount}/${totalCount} passing${resultsAreStale ? ' (stale)' : ''}`}
             />
+            {resultsAreStale && (
+              <Text type="warning" style={{ fontSize: 12, display: 'block', marginTop: 4 }}>
+                Text has changed since last run. Re-run tests for updated results.
+              </Text>
+            )}
           </div>
         )}
 
