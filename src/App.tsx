@@ -138,13 +138,15 @@ function App() {
           </div>
           <div id="tour-demo-switcher" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <DemoSwitcher onSelect={handleDemoSelect} currentId={currentDemoId} />
-            <Button
-              type="text"
-              icon={hasKey ? <SettingOutlined /> : <KeyOutlined />}
-              onClick={() => { setApiKeyInput(getApiKey()); setSettingsOpen(true); }}
-              style={{ color: hasKey ? 'rgba(255,255,255,0.65)' : '#faad14' }}
-              title={hasKey ? 'API Key configured' : 'Set API Key'}
-            />
+            {import.meta.env.DEV && (
+              <Button
+                type="text"
+                icon={hasKey ? <SettingOutlined /> : <KeyOutlined />}
+                onClick={() => { setApiKeyInput(getApiKey()); setSettingsOpen(true); }}
+                style={{ color: hasKey ? 'rgba(255,255,255,0.65)' : '#faad14' }}
+                title={hasKey ? 'API Key configured' : 'Set API Key'}
+              />
+            )}
           </div>
         </Header>
 
