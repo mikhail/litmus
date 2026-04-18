@@ -1,4 +1,5 @@
-import { onRequest } from "firebase-functions/v2/https";
+import { onRequest, type Request } from "firebase-functions/v2/https";
+import type { Response } from "express";
 import Anthropic from "@anthropic-ai/sdk";
 import { defineSecret } from "firebase-functions/params";
 
@@ -6,6 +7,21 @@ const anthropicApiKey = defineSecret("ANTHROPIC_API_KEY");
 
 function getClient(apiKey: string) {
   return new Anthropic({ apiKey });
+}
+
+function setCors(res: Response) {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "Content-Type");
+}
+
+function handleCors(req: Request, res: Response): boolean {
+  setCors(res);
+  if (req.method === "OPTIONS") {
+    res.status(204).send("");
+    return true;
+  }
+  return false;
 }
 
 function extractLastJsonArray(text: string): unknown[] {
@@ -25,6 +41,8 @@ function extractLastJsonArray(text: string): unknown[] {
 export const evaluate = onRequest(
   { cors: true, secrets: [anthropicApiKey] },
   async (req, res) => {
+    if (handleCors(req, res)) return;
+
     if (req.method !== "POST") {
       res.status(405).json({ error: "Method not allowed" });
       return;
@@ -93,6 +111,8 @@ Respond ONLY with the JSON array, no other text.`,
 export const rewrite = onRequest(
   { cors: true, secrets: [anthropicApiKey] },
   async (req, res) => {
+    if (handleCors(req, res)) return;
+
     if (req.method !== "POST") {
       res.status(405).json({ error: "Method not allowed" });
       return;

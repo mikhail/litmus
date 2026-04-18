@@ -51,11 +51,18 @@ async function callClaudeDev(systemPrompt: string, userPrompt: string): Promise<
 // --- Prod mode: call Cloud Functions ---
 
 async function callCloudFunction(url: string, body: Record<string, unknown>): Promise<Record<string, unknown>> {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new Error(
+      'Could not reach the server — this is likely a network or CORS issue. → Check your internet connection and try again. If this persists, contact the developer.'
+    );
+  }
 
   if (!res.ok) {
     const err = await res.json().catch(() => null);
