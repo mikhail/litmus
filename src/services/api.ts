@@ -14,7 +14,10 @@ async function callClaude(systemPrompt: string, userPrompt: string): Promise<str
   const apiKey = getApiKey();
   if (!apiKey) throw new Error('Anthropic API key not set. Click the ⚙ icon in the header to add it.');
 
-  const res = await fetch('/anthropic-proxy/v1/messages', {
+  // Dev: proxy through Vite to avoid CORS. Prod: call Anthropic directly (they support it).
+  const baseUrl = import.meta.env.DEV ? '/anthropic-proxy' : 'https://api.anthropic.com';
+
+  const res = await fetch(`${baseUrl}/v1/messages`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
