@@ -200,13 +200,16 @@ function App() {
           <p style={{ color: '#888', fontSize: 14, marginBottom: 20 }}>A composable text compliance engine</p>
         </div>
         <Paragraph style={{ fontSize: 15, lineHeight: 1.7 }}>
-          Litmus is a <strong>linter for prose</strong>. Define test packets — bundles of writing criteria — then run them against any text. Claude evaluates each criterion and explains what passes and what fails.
+          Litmus is a <strong>linter for prose</strong>. Your company, your organization, your team and your adjacent teams and you personally can define test packets — bundles of "writing criteria". Then run them against any text. This is <strong>TDD (test driven development) for creative writing</strong>.
         </Paragraph>
         <Paragraph style={{ fontSize: 15, lineHeight: 1.7 }}>
-          When tests fail, ask Claude to <strong>rewrite your text</strong> to fix the failures while preserving your meaning. Review the changes in a diff view and accept or reject.
+          Claude then evaluates each criterion and shows pass/fail and suggests fixes.
+        </Paragraph>
+        <Paragraph style={{ fontSize: 15, lineHeight: 1.7 }}>
+          Review the changes in a preview and accept or reject.
         </Paragraph>
         <Paragraph style={{ fontSize: 15, lineHeight: 1.7, marginBottom: 24 }}>
-          We've pre-loaded <strong>four demo scenarios</strong> — a law firm, a product team, an engineering org, and a newsroom — each with its own standards and sample text with intentional failures.
+          For demo purposes I've pre-loaded <strong>four scenarios</strong> — a law firm, a product team, an engineering org, and a newsroom — each with its own standards and sample text with intentional failures.
         </Paragraph>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
           <Button size="large" onClick={dismissWelcome}>
