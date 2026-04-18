@@ -1,0 +1,27 @@
+.diff-view {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-size: 15px;
+  line-height: 1.8;
+  color: #1a1a1a;
+  padding: 1rem;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #e8e8e8;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.diff-removed {
+  background: #fdd;
+  color: #b30000;
+  text-decoration: line-through;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+.diff-added {
+  background: #dfd;
+  color: #006600;
+  border-radius: 2px;
+  padding: 0 2px;
+}

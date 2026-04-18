@@ -1,0 +1,23 @@
+.panel {
+  overflow: hidden;
+}
+
+.panel-editor {
+  flex: 1;
+  background: #fff;
+  border-right: 1px solid #f0f0f0;
+}
+
+.panel-divider {
+  width: 1px;
+  background: #e8e8e8;
+  cursor: col-resize;
+  flex-shrink: 0;
+}
+
+.panel-tests {
+  width: 400px;
+  min-width: 320px;
+  background: #fafafa;
+  flex-shrink: 0;
+}

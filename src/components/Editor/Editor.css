@@ -1,0 +1,75 @@
+.litmus-editor {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.litmus-editor .tiptap {
+  padding: 2rem;
+  min-height: 100%;
+  outline: none;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-size: 17px;
+  line-height: 1.8;
+  color: #1a1a1a;
+}
+
+.litmus-editor .tiptap h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+.litmus-editor .tiptap h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+.litmus-editor .tiptap h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 1.2em;
+  margin-bottom: 0.4em;
+}
+
+.litmus-editor .tiptap p {
+  margin-bottom: 1em;
+}
+
+.litmus-editor .tiptap strong {
+  font-weight: 700;
+}
+
+.litmus-editor .tiptap em {
+  font-style: italic;
+}
+
+.litmus-editor .tiptap ul,
+.litmus-editor .tiptap ol {
+  padding-left: 1.5em;
+  margin-bottom: 1em;
+}
+
+.litmus-editor .tiptap li {
+  margin-bottom: 0.3em;
+}
+
+.litmus-editor .tiptap blockquote {
+  border-left: 3px solid #ddd;
+  padding-left: 1em;
+  margin-left: 0;
+  color: #555;
+  font-style: italic;
+}
+
+.litmus-editor .tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #adb5bd;
+  pointer-events: none;
+  height: 0;
+  font-style: italic;
+}
