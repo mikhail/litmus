@@ -39,12 +39,23 @@ export function usePackets() {
   }, []);
 
   const updatePacket = useCallback((id: string, updates: Partial<TestPacket>) => {
-    setUserPackets((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
-    );
-    setDemoPackets((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
-    );
+    setUserPackets((prev) => {
+      const exists = prev.some((p) => p.id === id);
+      if (exists) {
+        return prev.map((p) => (p.id === id ? { ...p, ...updates } : p));
+      }
+      // Promote demo packet to user packet on edit
+      return prev;
+    });
+    setDemoPackets((prev) => {
+      const packet = prev.find((p) => p.id === id);
+      if (packet) {
+        // Move edited demo packet to user packets
+        setUserPackets((userPrev) => [...userPrev, { ...packet, ...updates }]);
+        return prev.filter((p) => p.id !== id);
+      }
+      return prev;
+    });
   }, []);
 
   const deletePacket = useCallback((id: string) => {
