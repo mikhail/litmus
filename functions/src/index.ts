@@ -8,6 +8,20 @@ function getClient(apiKey: string) {
   return new Anthropic({ apiKey });
 }
 
+function extractLastJsonArray(text: string): unknown[] {
+  const codeBlocks = [...text.matchAll(/```(?:json)?\s*\n?([\s\S]*?)```/g)].map(m => m[1].trim());
+  const candidates = codeBlocks.length > 0 ? codeBlocks : [text.trim()];
+  for (let i = candidates.length - 1; i >= 0; i--) {
+    try {
+      const parsed = JSON.parse(candidates[i]);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      continue;
+    }
+  }
+  throw new Error("No valid JSON array found in response");
+}
+
 export const evaluate = onRequest(
   { cors: true, secrets: [anthropicApiKey] },
   async (req, res) => {
@@ -36,7 +50,7 @@ export const evaluate = onRequest(
       .join("\n");
 
     const message = await client.messages.create({
-      model: "claude-sonnet-4-6-20250219",
+      model: "claude-sonnet-4-6",
       max_tokens: 2048,
       messages: [
         {
@@ -68,7 +82,7 @@ Respond ONLY with the JSON array, no other text.`,
     }
 
     try {
-      const results = JSON.parse(content.text);
+      const results = extractLastJsonArray(content.text);
       res.json({ results });
     } catch {
       res.status(500).json({ error: "Failed to parse AI response", raw: content.text });
@@ -101,7 +115,7 @@ export const rewrite = onRequest(
       .join("\n");
 
     const message = await client.messages.create({
-      model: "claude-sonnet-4-6-20250219",
+      model: "claude-sonnet-4-6",
       max_tokens: 4096,
       messages: [
         {
@@ -127,6 +141,7 @@ Respond ONLY with the rewritten text (HTML). No explanations, no preamble.`,
       return;
     }
 
-    res.json({ rewrittenText: content.text });
+    const rewrittenText = content.text.replace(/```html\n?/g, "").replace(/```\n?/g, "").trim();
+    res.json({ rewrittenText });
   }
 );
