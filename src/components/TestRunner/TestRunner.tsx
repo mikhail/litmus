@@ -1,12 +1,14 @@
-import { Button, Collapse, Progress, Tag, Typography, Modal, Spin, Empty, Alert } from 'antd';
+import { Button, Collapse, Progress, Tag, Typography, Modal, Spin, Empty, Alert, Tooltip } from 'antd';
 import {
   CheckCircleFilled,
   CloseCircleFilled,
   EditFilled,
   LoadingOutlined,
+  PlayCircleOutlined,
+  ToolOutlined,
 } from '@ant-design/icons';
 import { useState } from 'react';
-import type { TestPacket, TestResult, RunResult } from '../../types';
+import type { TestPacket, TestResult, RunResult, Criterion } from '../../types';
 import { evaluateText, rewriteText } from '../../services/api';
 import DiffView from '../DiffView/DiffView';
 import './TestRunner.css';
@@ -22,7 +24,8 @@ interface Props {
 export default function TestRunner({ activePackets, documentHtml, onRewrite }: Props) {
   const [results, setResults] = useState<RunResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [rewriting, setRewriting] = useState(false);
+  const [runningCriterionId, setRunningCriterionId] = useState<string | null>(null);
+  const [fixingCriterionId, setFixingCriterionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const allCriteria = activePackets.flatMap((p) => p.criteria);
@@ -35,6 +38,26 @@ export default function TestRunner({ activePackets, documentHtml, onRewrite }: P
     const div = document.createElement('div');
     div.innerHTML = html;
     return div.textContent || '';
+  };
+
+  const upsertResult = (criterionId: string, result: TestResult, packetId: string) => {
+    setResults((prev) => {
+      const existing = prev.find((r) => r.packetId === packetId);
+      if (existing) {
+        return prev.map((r) =>
+          r.packetId === packetId
+            ? {
+                ...r,
+                results: r.results.some((tr) => tr.criterionId === criterionId)
+                  ? r.results.map((tr) => (tr.criterionId === criterionId ? result : tr))
+                  : [...r.results, result],
+                timestamp: Date.now(),
+              }
+            : r
+        );
+      }
+      return [...prev, { packetId, results: [result], timestamp: Date.now() }];
+    });
   };
 
   const handleRun = async () => {
@@ -64,7 +87,56 @@ export default function TestRunner({ activePackets, documentHtml, onRewrite }: P
     }
   };
 
-  const handleRewrite = async () => {
+  const handleRunSingle = async (criterion: Criterion, packetId: string) => {
+    if (!documentHtml.trim()) return;
+    setRunningCriterionId(criterion.id);
+    setError(null);
+
+    try {
+      const plainText = stripHtml(documentHtml);
+      const testResults = await evaluateText(plainText, [criterion]);
+      if (testResults.length > 0) {
+        upsertResult(criterion.id, testResults[0], packetId);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Evaluation failed');
+    } finally {
+      setRunningCriterionId(null);
+    }
+  };
+
+  const handleFixSingle = async (criterion: Criterion, result: TestResult) => {
+    setFixingCriterionId(criterion.id);
+    setError(null);
+
+    try {
+      const rewritten = await rewriteText(documentHtml, [
+        { label: criterion.label, reasoning: result.reasoning },
+      ]);
+      Modal.confirm({
+        title: `Fix: ${criterion.label}`,
+        width: 720,
+        content: (
+          <div style={{ maxHeight: 450, overflow: 'auto', marginTop: 12 }}>
+            <DiffView original={documentHtml} rewritten={rewritten} />
+          </div>
+        ),
+        okText: 'Accept fix',
+        cancelText: 'Reject',
+        onOk: () => {
+          onRewrite(rewritten);
+          // Invalidate all results — text has changed
+          setResults([]);
+        },
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Rewrite failed');
+    } finally {
+      setFixingCriterionId(null);
+    }
+  };
+
+  const handleRewriteAll = async () => {
     const failing = allResults
       .filter((r) => !r.pass)
       .map((r) => {
@@ -73,13 +145,13 @@ export default function TestRunner({ activePackets, documentHtml, onRewrite }: P
       });
 
     if (failing.length === 0) return;
-    setRewriting(true);
+    setFixingCriterionId('__all__');
     setError(null);
 
     try {
       const rewritten = await rewriteText(documentHtml, failing);
       Modal.confirm({
-        title: 'AI Rewrite Proposal',
+        title: 'AI Rewrite — Fix All Failures',
         width: 720,
         content: (
           <div style={{ maxHeight: 450, overflow: 'auto', marginTop: 12 }}>
@@ -96,7 +168,7 @@ export default function TestRunner({ activePackets, documentHtml, onRewrite }: P
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Rewrite failed');
     } finally {
-      setRewriting(false);
+      setFixingCriterionId(null);
     }
   };
 
@@ -126,7 +198,7 @@ export default function TestRunner({ activePackets, documentHtml, onRewrite }: P
           disabled={!documentHtml.trim()}
           block
         >
-          {loading ? 'Running Tests…' : '▶ Run Tests'}
+          {loading ? 'Running Tests…' : '▶ Run All Tests'}
         </Button>
 
         {totalCount > 0 && (
@@ -142,12 +214,12 @@ export default function TestRunner({ activePackets, documentHtml, onRewrite }: P
         {hasFailures && !loading && (
           <Button
             icon={<EditFilled />}
-            onClick={handleRewrite}
-            loading={rewriting}
+            onClick={handleRewriteAll}
+            loading={fixingCriterionId === '__all__'}
             block
             style={{ marginTop: 8 }}
           >
-            {rewriting ? 'Generating rewrite…' : 'AI Rewrite'}
+            {fixingCriterionId === '__all__' ? 'Generating rewrite…' : 'Fix All Failures'}
           </Button>
         )}
 
@@ -175,10 +247,12 @@ export default function TestRunner({ activePackets, documentHtml, onRewrite }: P
               style={{ marginTop: 8 }}
               items={packet.criteria.map((criterion) => {
                 const result = getResultForCriterion(criterion.id);
-                const isRunning = loading && !result;
+                const isRunningThis = runningCriterionId === criterion.id;
+                const isFixingThis = fixingCriterionId === criterion.id;
+                const isRunningAll = loading && !result;
 
                 let icon;
-                if (isRunning) icon = <Spin indicator={<LoadingOutlined spin />} size="small" />;
+                if (isRunningThis || isRunningAll) icon = <Spin indicator={<LoadingOutlined spin />} size="small" />;
                 else if (result?.pass) icon = <CheckCircleFilled style={{ color: '#52c41a' }} />;
                 else if (result && !result.pass) icon = <CloseCircleFilled style={{ color: '#ff4d4f' }} />;
                 else icon = <Tag style={{ fontSize: 11 }}>not run</Tag>;
@@ -188,7 +262,32 @@ export default function TestRunner({ activePackets, documentHtml, onRewrite }: P
                   label: (
                     <span className="criterion-label">
                       {icon}
-                      <span style={{ marginLeft: 8 }}>{criterion.label}</span>
+                      <span style={{ marginLeft: 8, flex: 1 }}>{criterion.label}</span>
+                    </span>
+                  ),
+                  extra: (
+                    <span className="criterion-actions" onClick={(e) => e.stopPropagation()}>
+                      <Tooltip title="Run this test">
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<PlayCircleOutlined />}
+                          loading={isRunningThis}
+                          disabled={!documentHtml.trim() || loading}
+                          onClick={() => handleRunSingle(criterion, packet.id)}
+                        />
+                      </Tooltip>
+                      {result && !result.pass && (
+                        <Tooltip title="Fix this one">
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={<ToolOutlined />}
+                            loading={isFixingThis}
+                            onClick={() => handleFixSingle(criterion, result)}
+                          />
+                        </Tooltip>
+                      )}
                     </span>
                   ),
                   children: result ? (
