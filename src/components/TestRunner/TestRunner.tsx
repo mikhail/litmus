@@ -71,6 +71,7 @@ export default function TestRunner({ activePackets, documentHtml, onRewrite }: P
       const runResults: RunResult[] = [];
 
       for (const packet of activePackets) {
+        if (packet.criteria.length === 0) continue;
         const testResults = await evaluateText(plainText, packet.criteria);
         runResults.push({
           packetId: packet.id,
