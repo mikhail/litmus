@@ -35,6 +35,7 @@ function App() {
 
   const {
     packets,
+    userPacketIds,
     activePackets,
     activePacketIds,
     addPacket,
@@ -138,6 +139,7 @@ function App() {
         <Content style={{ display: 'flex', overflow: 'hidden' }}>
           <PacketManager
             packets={packets}
+            userPacketIds={userPacketIds}
             activePacketIds={activePacketIds}
             onToggle={togglePacket}
             onAdd={addPacket}

@@ -6,6 +6,7 @@ import './PacketManager.css';
 
 interface Props {
   packets: TestPacket[];
+  userPacketIds: Set<string>;
   activePacketIds: Set<string>;
   onToggle: (id: string) => void;
   onAdd: (packet: TestPacket) => void;
@@ -19,6 +20,7 @@ function generateId() {
 
 export default function PacketManager({
   packets,
+  userPacketIds,
   activePacketIds,
   onToggle,
   onAdd,
@@ -92,65 +94,75 @@ export default function PacketManager({
         <div className="packet-sidebar-content">
           {packets.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#999' }}>
-              <p style={{ marginBottom: 12, fontSize: 13 }}>No test packets yet.</p>
+              <p style={{ marginBottom: 8, fontSize: 13, lineHeight: 1.6 }}>
+                Select a demo from the <strong>top right</strong> to see pre-built packets, or create your own.
+              </p>
               <Button type="dashed" icon={<PlusOutlined />} onClick={openCreateModal} size="small">
-                Create your first packet
+                Create a packet
               </Button>
             </div>
           ) : (
             <List
               size="small"
               dataSource={packets}
-              renderItem={(packet) => (
-                <List.Item
-                  style={{ padding: '8px 12px' }}
-                  actions={[
-                    <Tooltip title="Edit" key="edit">
-                      <Button
-                        type="text"
-                        size="small"
-                        icon={<EditOutlined />}
-                        onClick={() => openEditModal(packet)}
-                      />
-                    </Tooltip>,
-                    <Tooltip title="Delete" key="delete">
-                      <Button
-                        type="text"
-                        size="small"
-                        danger
-                        icon={<DeleteOutlined />}
-                        onClick={() =>
-                          Modal.confirm({
-                            title: `Delete "${packet.name}"?`,
-                            onOk: () => onDelete(packet.id),
-                          })
-                        }
-                      />
-                    </Tooltip>,
-                  ]}
-                >
-                  <List.Item.Meta
-                    avatar={
-                      <Checkbox
-                        checked={activePacketIds.has(packet.id)}
-                        onChange={() => onToggle(packet.id)}
-                      />
-                    }
-                    title={<span style={{ fontSize: 13 }}>{packet.name}</span>}
-                    description={
-                      <span style={{ fontSize: 11 }}>
-                        {packet.criteria.length} criteria
-                        {packet.description && (
-                          <>
-                            {' · '}
-                            <Tag style={{ fontSize: 10 }}>{packet.description.slice(0, 30)}…</Tag>
-                          </>
-                        )}
-                      </span>
-                    }
-                  />
-                </List.Item>
-              )}
+              renderItem={(packet) => {
+                const isUserPacket = userPacketIds.has(packet.id);
+                return (
+                  <List.Item
+                    style={{ padding: '8px 12px' }}
+                    actions={[
+                      <Tooltip title="Edit" key="edit">
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<EditOutlined />}
+                          onClick={() => openEditModal(packet)}
+                        />
+                      </Tooltip>,
+                      ...(isUserPacket
+                        ? [
+                            <Tooltip title="Delete" key="delete">
+                              <Button
+                                type="text"
+                                size="small"
+                                danger
+                                icon={<DeleteOutlined />}
+                                onClick={() =>
+                                  Modal.confirm({
+                                    title: `Delete "${packet.name}"?`,
+                                    onOk: () => onDelete(packet.id),
+                                  })
+                                }
+                              />
+                            </Tooltip>,
+                          ]
+                        : []),
+                    ]}
+                  >
+                    <List.Item.Meta
+                      avatar={
+                        <Checkbox
+                          checked={activePacketIds.has(packet.id)}
+                          onChange={() => onToggle(packet.id)}
+                        />
+                      }
+                      title={
+                        <span style={{ fontSize: 13 }}>
+                          {packet.name}
+                          {isUserPacket && (
+                            <Tag color="blue" style={{ fontSize: 10, marginLeft: 6, lineHeight: '16px' }}>custom</Tag>
+                          )}
+                        </span>
+                      }
+                      description={
+                        <span style={{ fontSize: 11 }}>
+                          {packet.criteria.length} criteria
+                        </span>
+                      }
+                    />
+                  </List.Item>
+                );
+              }}
             />
           )}
         </div>

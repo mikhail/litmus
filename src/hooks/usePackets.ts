@@ -1,9 +1,9 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import type { TestPacket } from '../types';
 
-const STORAGE_KEY = 'litmus-packets';
+const STORAGE_KEY = 'litmus-user-packets';
 
-function loadPackets(): TestPacket[] {
+function loadUserPackets(): TestPacket[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : [];
@@ -12,30 +12,44 @@ function loadPackets(): TestPacket[] {
   }
 }
 
-function savePackets(packets: TestPacket[]) {
+function saveUserPackets(packets: TestPacket[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(packets));
 }
 
 export function usePackets() {
-  const [packets, setPackets] = useState<TestPacket[]>(loadPackets);
+  // User-created packets: persisted in localStorage, always visible
+  const [userPackets, setUserPackets] = useState<TestPacket[]>(loadUserPackets);
+  // Demo packets: transient, swapped when demo context changes
+  const [demoPackets, setDemoPackets] = useState<TestPacket[]>([]);
   const [activePacketIds, setActivePacketIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    savePackets(packets);
-  }, [packets]);
+    saveUserPackets(userPackets);
+  }, [userPackets]);
+
+  // All visible packets = user packets + current demo packets
+  const visiblePackets = useMemo(
+    () => [...userPackets, ...demoPackets],
+    [userPackets, demoPackets]
+  );
 
   const addPacket = useCallback((packet: TestPacket) => {
-    setPackets((prev) => [...prev, packet]);
+    setUserPackets((prev) => [...prev, packet]);
+    setActivePacketIds((prev) => new Set([...prev, packet.id]));
   }, []);
 
   const updatePacket = useCallback((id: string, updates: Partial<TestPacket>) => {
-    setPackets((prev) =>
+    setUserPackets((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
+    );
+    setDemoPackets((prev) =>
       prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
     );
   }, []);
 
   const deletePacket = useCallback((id: string) => {
-    setPackets((prev) => prev.filter((p) => p.id !== id));
+    setUserPackets((prev) => prev.filter((p) => p.id !== id));
+    setDemoPackets((prev) => prev.filter((p) => p.id !== id));
     setActivePacketIds((prev) => {
       const next = new Set(prev);
       next.delete(id);
@@ -52,30 +66,29 @@ export function usePackets() {
     });
   }, []);
 
-  const setActivePackets = useCallback((ids: string[]) => {
-    setActivePacketIds(new Set(ids));
-  }, []);
-
-  const loadDemoPackets = useCallback((demoPackets: TestPacket[]) => {
-    setPackets((prev) => {
-      const existingIds = new Set(prev.map((p) => p.id));
-      const newPackets = demoPackets.filter((p) => !existingIds.has(p.id));
-      return [...prev, ...newPackets];
+  const loadDemoPackets = useCallback((packets: TestPacket[]) => {
+    setDemoPackets(packets);
+    // Activate demo packets + keep user packets that were already active
+    setActivePacketIds((prev) => {
+      const demoIds = new Set(packets.map((p) => p.id));
+      const keptUserIds = [...prev].filter((id) => !demoIds.has(id));
+      return new Set([...keptUserIds, ...packets.map((p) => p.id)]);
     });
-    setActivePacketIds(new Set(demoPackets.map((p) => p.id)));
   }, []);
 
-  const activePackets = packets.filter((p) => activePacketIds.has(p.id));
+  const activePackets = visiblePackets.filter((p) => activePacketIds.has(p.id));
+
+  const userPacketIds = new Set(userPackets.map((p) => p.id));
 
   return {
-    packets,
+    packets: visiblePackets,
+    userPacketIds,
     activePackets,
     activePacketIds,
     addPacket,
     updatePacket,
     deletePacket,
     togglePacket,
-    setActivePackets,
     loadDemoPackets,
   };
 }
