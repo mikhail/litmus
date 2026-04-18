@@ -179,7 +179,12 @@ export default function TestRunner({ activePackets, documentHtml, onRewrite }: P
     return (
       <div className="test-runner">
         <Empty
-          description="No test packets active"
+          description={
+            <span style={{ color: '#999' }}>
+              Activate a packet from the left panel,<br />
+              or choose a demo from the top right.
+            </span>
+          }
           image={Empty.PRESENTED_IMAGE_SIMPLE}
           style={{ marginTop: '4rem' }}
         />
