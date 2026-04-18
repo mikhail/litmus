@@ -43,22 +43,29 @@ export const evaluate = onRequest(
       return;
     }
 
-    const client = getClient(anthropicApiKey.value());
+    try {
+      const apiKey = anthropicApiKey.value();
+      if (!apiKey) {
+        res.status(500).json({ error: "ANTHROPIC_API_KEY secret is not configured on the server." });
+        return;
+      }
 
-    const criteriaList = criteria
-      .map(
-        (c, i) =>
-          `${i + 1}. ID: "${c.id}" | Label: "${c.label}"${c.description ? ` | Description: ${c.description}` : ""}`
-      )
-      .join("\n");
+      const client = getClient(apiKey);
 
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 2048,
-      messages: [
-        {
-          role: "user",
-          content: `You are a strict text compliance evaluator. Evaluate the following text against each criterion. For each criterion, determine if the text PASSES or FAILS.
+      const criteriaList = criteria
+        .map(
+          (c, i) =>
+            `${i + 1}. ID: "${c.id}" | Label: "${c.label}"${c.description ? ` | Description: ${c.description}` : ""}`
+        )
+        .join("\n");
+
+      const message = await client.messages.create({
+        model: "claude-sonnet-4-6",
+        max_tokens: 2048,
+        messages: [
+          {
+            role: "user",
+            content: `You are a strict text compliance evaluator. Evaluate the following text against each criterion. For each criterion, determine if the text PASSES or FAILS.
 
 TEXT TO EVALUATE:
 ---
@@ -74,21 +81,22 @@ Respond with a JSON array. Each element must have:
 - "reasoning": a brief explanation (1-2 sentences) of why it passes or fails
 
 Respond ONLY with the JSON array, no other text.`,
-        },
-      ],
-    });
+          },
+        ],
+      });
 
-    const content = message.content[0];
-    if (content.type !== "text") {
-      res.status(500).json({ error: "Unexpected response format" });
-      return;
-    }
+      const content = message.content[0];
+      if (content.type !== "text") {
+        res.status(500).json({ error: "Unexpected response format from Claude." });
+        return;
+      }
 
-    try {
       const results = extractLastJsonArray(content.text);
       res.json({ results });
-    } catch {
-      res.status(500).json({ error: "Failed to parse AI response", raw: content.text });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("evaluate error:", msg);
+      res.status(500).json({ error: `Evaluation failed: ${msg}` });
     }
   }
 );
@@ -113,19 +121,26 @@ export const rewrite = onRequest(
       return;
     }
 
-    const client = getClient(anthropicApiKey.value());
+    try {
+      const apiKey = anthropicApiKey.value();
+      if (!apiKey) {
+        res.status(500).json({ error: "ANTHROPIC_API_KEY secret is not configured on the server." });
+        return;
+      }
 
-    const failureList = failingCriteria
-      .map((c, i) => `${i + 1}. "${c.label}" — Failed because: ${c.reasoning}`)
-      .join("\n");
+      const client = getClient(apiKey);
 
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 4096,
-      messages: [
-        {
-          role: "user",
-          content: `You are a precise text editor. Rewrite the following text to fix ALL of the failing criteria listed below. Preserve the original meaning, tone, and structure as much as possible. Only make changes necessary to pass the failing criteria. Keep the same HTML formatting.
+      const failureList = failingCriteria
+        .map((c, i) => `${i + 1}. "${c.label}" — Failed because: ${c.reasoning}`)
+        .join("\n");
+
+      const message = await client.messages.create({
+        model: "claude-sonnet-4-6",
+        max_tokens: 4096,
+        messages: [
+          {
+            role: "user",
+            content: `You are a precise text editor. Rewrite the following text to fix ALL of the failing criteria listed below. Preserve the original meaning, tone, and structure as much as possible. Only make changes necessary to pass the failing criteria. Keep the same HTML formatting.
 
 ORIGINAL TEXT:
 ---
@@ -136,17 +151,22 @@ FAILING CRITERIA:
 ${failureList}
 
 Respond ONLY with the rewritten text (HTML). No explanations, no preamble.`,
-        },
-      ],
-    });
+          },
+        ],
+      });
 
-    const content = message.content[0];
-    if (content.type !== "text") {
-      res.status(500).json({ error: "Unexpected response format" });
-      return;
+      const content = message.content[0];
+      if (content.type !== "text") {
+        res.status(500).json({ error: "Unexpected response format from Claude." });
+        return;
+      }
+
+      const rewrittenText = content.text.replace(/```html\n?/g, "").replace(/```\n?/g, "").trim();
+      res.json({ rewrittenText });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("rewrite error:", msg);
+      res.status(500).json({ error: `Rewrite failed: ${msg}` });
     }
-
-    const rewrittenText = content.text.replace(/```html\n?/g, "").replace(/```\n?/g, "").trim();
-    res.json({ rewrittenText });
   }
 );
