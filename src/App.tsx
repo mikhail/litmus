@@ -69,7 +69,7 @@ function App() {
       title: '② Review active packets',
       description: 'Each context loads test packets — bundles of criteria your text must pass. Click here to see, edit, or create your own packets.',
       target: () => document.getElementById('tour-packets-btn')!,
-      placement: 'bottomLeft',
+      placement: 'right',
     },
     {
       title: '③ Run tests',
