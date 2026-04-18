@@ -62,13 +62,13 @@ function App() {
   const tourSteps: TourProps['steps'] = [
     {
       title: '① Pick a scenario',
-      description: 'Choose one of four pre-loaded company contexts — each has its own writing standards and sample text with intentional failures. We\'ve loaded the Law Firm demo for you.',
+      description: 'Choose one of four pre-loaded company contexts — each has its own writing standards and sample text with intentional failures. We\'ve loaded the Engineering Org demo for you.',
       target: () => document.getElementById('tour-demo-switcher')!,
       placement: 'bottomRight',
     },
     {
       title: '② Review active packets',
-      description: 'Each context loads test packets — bundles of criteria your text must pass. Here you can see, edit, or create your own packets.',
+      description: 'Each context loads test packets at different levels — company wide, team, and personal. Here you can see, edit, or create your own packets.',
       target: () => document.getElementById('tour-packets-btn')!,
       placement: 'right',
     },
@@ -90,11 +90,11 @@ function App() {
     setWelcomeOpen(false);
     localStorage.setItem(ONBOARDED_KEY, '1');
     // Preload the Law Firm demo so the tour has something to point at
-    const lawFirm = demoContexts.find((c) => c.id === 'law-firm');
-    if (lawFirm) {
-      setCurrentDemoId(lawFirm.id);
-      setDocumentHtml(lawFirm.sampleText);
-      loadDemoPackets(lawFirm.packets);
+    const engOrg = demoContexts.find((c) => c.id === 'engineering-org');
+    if (engOrg) {
+      setCurrentDemoId(engOrg.id);
+      setDocumentHtml(engOrg.sampleText);
+      loadDemoPackets(engOrg.packets);
     }
     // Small delay so the DOM updates before tour positions itself
     setTimeout(() => setTourOpen(true), 100);
