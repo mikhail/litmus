@@ -10,6 +10,7 @@ import {
 import { useState } from 'react';
 import type { TestPacket, TestResult, RunResult, Criterion } from '../../types';
 import { evaluateText, rewriteText } from '../../services/api';
+import { runAllPackets } from '../../services/runAllPackets';
 import DiffView from '../DiffView/DiffView';
 import './TestRunner.css';
 
@@ -66,26 +67,27 @@ export default function TestRunner({ activePackets, documentHtml, onRewrite }: P
     setError(null);
     setResults([]);
 
-    try {
-      const plainText = stripHtml(documentHtml);
-      const runResults: RunResult[] = [];
+    const plainText = stripHtml(documentHtml);
+    const { results: runResults, errors: runErrors } = await runAllPackets(
+      plainText,
+      activePackets,
+      evaluateText
+    );
 
-      for (const packet of activePackets) {
-        if (packet.criteria.length === 0) continue;
-        const testResults = await evaluateText(plainText, packet.criteria);
-        runResults.push({
-          packetId: packet.id,
-          results: testResults,
-          timestamp: Date.now(),
-        });
-      }
+    setResults(runResults);
 
-      setResults(runResults);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Evaluation failed');
-    } finally {
-      setLoading(false);
+    if (runErrors.length > 0) {
+      const errorMsg = runErrors
+        .map((e) => `"${e.packetName}": ${e.error}`)
+        .join('\n');
+      const successCount = runResults.length;
+      const prefix = successCount > 0
+        ? `${successCount} packet(s) succeeded, but ${runErrors.length} failed`
+        : `All ${runErrors.length} packet(s) failed`;
+      setError(`${prefix}:\n${errorMsg}`);
     }
+
+    setLoading(false);
   };
 
   const handleRunSingle = async (criterion: Criterion, packetId: string) => {
@@ -231,12 +233,12 @@ export default function TestRunner({ activePackets, documentHtml, onRewrite }: P
 
         {error && (
           <Alert
-            type="error"
+            type={totalCount > 0 ? 'warning' : 'error'}
             showIcon
             closable
             onClose={() => setError(null)}
-            message="Test run failed"
-            description={error}
+            message={totalCount > 0 ? 'Partial results' : 'Test run failed'}
+            description={<span style={{ whiteSpace: 'pre-line' }}>{error}</span>}
             style={{ marginTop: 12 }}
           />
         )}
