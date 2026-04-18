@@ -1,11 +1,10 @@
-import { Drawer, Button, List, Checkbox, Modal, Form, Input, Space, Tag, Tooltip } from 'antd';
-import { PlusOutlined, DeleteOutlined, EditOutlined, ExperimentOutlined } from '@ant-design/icons';
+import { Button, List, Checkbox, Modal, Form, Input, Space, Tag, Tooltip } from 'antd';
+import { PlusOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import type { TestPacket, Criterion } from '../../types';
+import './PacketManager.css';
 
 interface Props {
-  open: boolean;
-  onClose: () => void;
   packets: TestPacket[];
   activePacketIds: Set<string>;
   onToggle: (id: string) => void;
@@ -19,8 +18,6 @@ function generateId() {
 }
 
 export default function PacketManager({
-  open,
-  onClose,
   packets,
   activePacketIds,
   onToggle,
@@ -84,85 +81,80 @@ export default function PacketManager({
 
   return (
     <>
-      <Drawer
-        title={
-          <Space>
-            <ExperimentOutlined />
-            Test Packets
-          </Space>
-        }
-        placement="left"
-        width={380}
-        open={open}
-        onClose={onClose}
-        extra={
+      <div className="packet-sidebar" id="tour-packets-btn">
+        <div className="packet-sidebar-header">
+          <span className="packet-sidebar-title">Test Packets</span>
           <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal} size="small">
-            New Packet
+            New
           </Button>
-        }
-      >
-        {packets.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '2rem 0', color: '#999' }}>
-            <p>No test packets yet.</p>
-            <Button type="dashed" icon={<PlusOutlined />} onClick={openCreateModal}>
-              Create your first packet
-            </Button>
-          </div>
-        ) : (
-          <List
-            dataSource={packets}
-            renderItem={(packet) => (
-              <List.Item
-                actions={[
-                  <Tooltip title="Edit" key="edit">
-                    <Button
-                      type="text"
-                      size="small"
-                      icon={<EditOutlined />}
-                      onClick={() => openEditModal(packet)}
-                    />
-                  </Tooltip>,
-                  <Tooltip title="Delete" key="delete">
-                    <Button
-                      type="text"
-                      size="small"
-                      danger
-                      icon={<DeleteOutlined />}
-                      onClick={() =>
-                        Modal.confirm({
-                          title: `Delete "${packet.name}"?`,
-                          onOk: () => onDelete(packet.id),
-                        })
-                      }
-                    />
-                  </Tooltip>,
-                ]}
-              >
-                <List.Item.Meta
-                  avatar={
-                    <Checkbox
-                      checked={activePacketIds.has(packet.id)}
-                      onChange={() => onToggle(packet.id)}
-                    />
-                  }
-                  title={packet.name}
-                  description={
-                    <span style={{ fontSize: 12 }}>
-                      {packet.criteria.length} criteria
-                      {packet.description && (
-                        <>
-                          {' · '}
-                          <Tag style={{ fontSize: 11 }}>{packet.description.slice(0, 40)}…</Tag>
-                        </>
-                      )}
-                    </span>
-                  }
-                />
-              </List.Item>
-            )}
-          />
-        )}
-      </Drawer>
+        </div>
+
+        <div className="packet-sidebar-content">
+          {packets.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#999' }}>
+              <p style={{ marginBottom: 12, fontSize: 13 }}>No test packets yet.</p>
+              <Button type="dashed" icon={<PlusOutlined />} onClick={openCreateModal} size="small">
+                Create your first packet
+              </Button>
+            </div>
+          ) : (
+            <List
+              size="small"
+              dataSource={packets}
+              renderItem={(packet) => (
+                <List.Item
+                  style={{ padding: '8px 12px' }}
+                  actions={[
+                    <Tooltip title="Edit" key="edit">
+                      <Button
+                        type="text"
+                        size="small"
+                        icon={<EditOutlined />}
+                        onClick={() => openEditModal(packet)}
+                      />
+                    </Tooltip>,
+                    <Tooltip title="Delete" key="delete">
+                      <Button
+                        type="text"
+                        size="small"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={() =>
+                          Modal.confirm({
+                            title: `Delete "${packet.name}"?`,
+                            onOk: () => onDelete(packet.id),
+                          })
+                        }
+                      />
+                    </Tooltip>,
+                  ]}
+                >
+                  <List.Item.Meta
+                    avatar={
+                      <Checkbox
+                        checked={activePacketIds.has(packet.id)}
+                        onChange={() => onToggle(packet.id)}
+                      />
+                    }
+                    title={<span style={{ fontSize: 13 }}>{packet.name}</span>}
+                    description={
+                      <span style={{ fontSize: 11 }}>
+                        {packet.criteria.length} criteria
+                        {packet.description && (
+                          <>
+                            {' · '}
+                            <Tag style={{ fontSize: 10 }}>{packet.description.slice(0, 30)}…</Tag>
+                          </>
+                        )}
+                      </span>
+                    }
+                  />
+                </List.Item>
+              )}
+            />
+          )}
+        </div>
+      </div>
 
       <Modal
         title={editingPacket ? 'Edit Packet' : 'Create Test Packet'}

@@ -1,0 +1,32 @@
+.packet-sidebar {
+  width: 260px;
+  min-width: 220px;
+  background: #fff;
+  border-right: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.packet-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.packet-sidebar-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #888;
+}
+
+.packet-sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+}

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Layout, Button, Tag, ConfigProvider, theme, Modal, Input, message, Tour, Typography } from 'antd';
+import { Layout, Button, ConfigProvider, theme, Modal, Input, message, Tour, Typography } from 'antd';
 import type { TourProps } from 'antd';
-import { ExperimentOutlined, SettingOutlined, KeyOutlined } from '@ant-design/icons';
+import { SettingOutlined, KeyOutlined } from '@ant-design/icons';
 import Editor from './components/Editor/Editor';
 import TestRunner from './components/TestRunner/TestRunner';
 import PacketManager from './components/PacketManager/PacketManager';
@@ -18,7 +18,6 @@ const ONBOARDED_KEY = 'litmus-onboarded';
 
 function App() {
   const [documentHtml, setDocumentHtml] = useState('');
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [currentDemoId, setCurrentDemoId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState(getApiKey());
@@ -121,20 +120,6 @@ function App() {
             <span style={{ fontSize: 20, fontWeight: 700, color: '#fff', letterSpacing: '-0.02em' }}>
               ◈ Litmus
             </span>
-            <Button
-              id="tour-packets-btn"
-              type="text"
-              icon={<ExperimentOutlined />}
-              onClick={() => setDrawerOpen(true)}
-              style={{ color: 'rgba(255,255,255,0.85)' }}
-            >
-              Packets
-              {activePackets.length > 0 && (
-                <Tag color="blue" style={{ marginLeft: 6 }}>
-                  {activePackets.length}
-                </Tag>
-              )}
-            </Button>
           </div>
           <div id="tour-demo-switcher" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <DemoSwitcher onSelect={handleDemoSelect} currentId={currentDemoId} />
@@ -151,6 +136,14 @@ function App() {
         </Header>
 
         <Content style={{ display: 'flex', overflow: 'hidden' }}>
+          <PacketManager
+            packets={packets}
+            activePacketIds={activePacketIds}
+            onToggle={togglePacket}
+            onAdd={addPacket}
+            onUpdate={updatePacket}
+            onDelete={deletePacket}
+          />
           <div className="panel panel-editor">
             <Editor content={documentHtml} onUpdate={setDocumentHtml} />
           </div>
@@ -164,17 +157,6 @@ function App() {
           </div>
         </Content>
       </Layout>
-
-      <PacketManager
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        packets={packets}
-        activePacketIds={activePacketIds}
-        onToggle={togglePacket}
-        onAdd={addPacket}
-        onUpdate={updatePacket}
-        onDelete={deletePacket}
-      />
 
       <Modal
         title="Settings"
