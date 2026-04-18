@@ -6,6 +6,7 @@ import Editor from './components/Editor/Editor';
 import TestRunner from './components/TestRunner/TestRunner';
 import PacketManager from './components/PacketManager/PacketManager';
 import DemoSwitcher from './components/DemoSwitcher/DemoSwitcher';
+import { demoContexts } from './data/demoContexts';
 import { usePackets } from './hooks/usePackets';
 import { getApiKey, setApiKey } from './services/api';
 import type { DemoContext } from './types';
@@ -61,7 +62,7 @@ function App() {
   const tourSteps: TourProps['steps'] = [
     {
       title: '① Pick a scenario',
-      description: 'Choose one of four pre-loaded company contexts — each has its own writing standards and sample text with intentional failures.',
+      description: 'Choose one of four pre-loaded company contexts — each has its own writing standards and sample text with intentional failures. We\'ve loaded the Law Firm demo for you.',
       target: () => document.getElementById('tour-demo-switcher')!,
       placement: 'bottomRight',
     },
@@ -73,13 +74,13 @@ function App() {
     },
     {
       title: '③ Run tests',
-      description: 'Claude evaluates your text against every active criterion and returns pass/fail with reasoning for each one.',
+      description: 'Hit this button to have Claude evaluate your text against every active criterion. Each one returns pass or fail with reasoning.',
       target: () => document.getElementById('tour-run-tests')!,
       placement: 'left',
     },
     {
-      title: '④ AI Rewrite',
-      description: 'When tests fail, Claude proposes a rewrite that fixes the failures while preserving your meaning. You review a diff and approve or reject.',
+      title: '④ Fix individually or all at once',
+      description: 'Each failing criterion gets a 🔧 button to fix just that one issue. Or use "Fix All Failures" to rewrite everything in one shot. You\'ll see a diff preview before accepting.',
       target: () => document.getElementById('tour-run-tests')!,
       placement: 'left',
     },
@@ -88,7 +89,15 @@ function App() {
   const startTour = () => {
     setWelcomeOpen(false);
     localStorage.setItem(ONBOARDED_KEY, '1');
-    setTourOpen(true);
+    // Preload the Law Firm demo so the tour has something to point at
+    const lawFirm = demoContexts.find((c) => c.id === 'law-firm');
+    if (lawFirm) {
+      setCurrentDemoId(lawFirm.id);
+      setDocumentHtml(lawFirm.sampleText);
+      loadDemoPackets(lawFirm.packets);
+    }
+    // Small delay so the DOM updates before tour positions itself
+    setTimeout(() => setTourOpen(true), 100);
   };
 
   const dismissWelcome = () => {
